@@ -127,52 +127,88 @@ export default function Chat() {
 
   const activeConv = conversations.find(c => c.id === activeId);
 
-  const sendMessage = useCallback(() => {
-    const text = inputText.trim();
-    if (!text || isTyping) return;
+  const sendMessage = useCallback(async () => {
+  const text = inputText.trim();
+  if (!text || isTyping) return;
 
-    let currentId = activeId;
-    let conv = conversations.find(c => c.id === currentId);
+  // 1. 如果没有激活的会话，先创建一个
+  let currentId = activeId;
+  let conv = conversations.find(c => c.id === currentId);
+  if (!conv) {
+    const newConv = {
+      id: Date.now(),
+      title: text.length > 14 ? text.slice(0, 14) + '…' : text,
+      time: '刚刚',
+      messages: []
+    };
+    setConversations(prev => [newConv, ...prev]);
+    currentId = newConv.id;
+    setActiveId(currentId);
+    conv = newConv;
+  }
 
-    if (!conv) {
-      const newConv = {
-        id: Date.now(),
-        title: text.length > 14 ? text.slice(0, 14) + '…' : text,
-        time: '刚刚',
-        messages: []
-      };
-      setConversations(prev => [newConv, ...prev]);
-      currentId = newConv.id;
-      setActiveId(currentId);
-      conv = newConv;
+  // 2. 添加用户消息到本地状态（乐观更新）
+  const userMsg = { role: 'user', content: text };
+  const updatedConv = {
+    ...conv,
+    messages: [...conv.messages, userMsg]
+  };
+  setConversations(prev =>
+    prev.map(c => c.id === updatedConv.id ? updatedConv : c)
+  );
+  setInputText('');
+  scrollToBottom();
+
+  // 3. 显示“正在输入”状态
+  setIsTyping(true);
+
+  try {
+    // 4. 调用后端 /chat 接口
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: text,
+        sessionId: currentId,
+        // 如果你有设置页，可以传 model 和 systemPrompt 等
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const userMsg = { role: 'user', content: text };
-    const updatedConv = {
-      ...conv,
-      messages: [...conv.messages, userMsg]
-    };
-    setConversations(prev =>
-      prev.map(c => c.id === updatedConv.id ? updatedConv : c)
-    );
-    setInputText('');
-    scrollToBottom();
+    const data = await response.json();
+    // 假设后端返回结构为 { reply: '...' }
+    const reply = data.reply || '抱歉，我没有理解。';
 
-    setIsTyping(true);
-    setTimeout(() => {
-      const reply = pickReply(text);
-      const aiMsg = { role: 'ai', content: reply };
-      setConversations(prev =>
-        prev.map(c => {
-          if (c.id === updatedConv.id) {
-            return { ...c, messages: [...c.messages, aiMsg] };
-          }
-          return c;
-        })
-      );
-      setIsTyping(false);
-    }, 900 + Math.random() * 1400);
-  }, [inputText, activeId, conversations, isTyping, scrollToBottom]);
+    // 5. 添加 AI 回复到本地状态
+    const aiMsg = { role: 'ai', content: reply };
+    setConversations(prev =>
+      prev.map(c => {
+        if (c.id === updatedConv.id) {
+          return { ...c, messages: [...c.messages, aiMsg] };
+        }
+        return c;
+      })
+    );
+  } catch (error) {
+    console.error('发送消息失败:', error);
+    // 显示错误提示（可选）
+    const errorMsg = { role: 'ai', content: '⚠️ 连接服务器失败，请稍后重试。' };
+    setConversations(prev =>
+      prev.map(c => {
+        if (c.id === updatedConv.id) {
+          return { ...c, messages: [...c.messages, errorMsg] };
+        }
+        return c;
+      })
+    );
+  } finally {
+    setIsTyping(false);
+    scrollToBottom();
+  }
+}, [inputText, activeId, conversations, isTyping, scrollToBottom]);
 
   const openConv = (id) => {
     setActiveId(id);
