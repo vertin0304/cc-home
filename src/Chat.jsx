@@ -97,6 +97,14 @@ export default function Chat() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [theme, setTheme] = useState(() => localStorage.getItem('home-theme') || 'dark');
 
+  // ---- AI 配置相关状态 ----
+  const [configBaseUrl, setConfigBaseUrl] = useState('');
+  const [configApiKey, setConfigApiKey] = useState('');
+  const [configModel, setConfigModel] = useState('');
+  const [availableModels, setAvailableModels] = useState([]);
+  const [adminToken, setAdminToken] = useState('');
+  const [configLoading, setConfigLoading] = useState(false);
+
   const messageAreaRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -127,88 +135,140 @@ export default function Chat() {
 
   const activeConv = conversations.find(c => c.id === activeId);
 
-  const sendMessage = useCallback(async () => {
-  const text = inputText.trim();
-  if (!text || isTyping) return;
-
-  // 1. 如果没有激活的会话，先创建一个
-  let currentId = activeId;
-  let conv = conversations.find(c => c.id === currentId);
-  if (!conv) {
-    const newConv = {
-      id: Date.now(),
-      title: text.length > 14 ? text.slice(0, 14) + '…' : text,
-      time: '刚刚',
-      messages: []
-    };
-    setConversations(prev => [newConv, ...prev]);
-    currentId = newConv.id;
-    setActiveId(currentId);
-    conv = newConv;
-  }
-
-  // 2. 添加用户消息到本地状态（乐观更新）
-  const userMsg = { role: 'user', content: text };
-  const updatedConv = {
-    ...conv,
-    messages: [...conv.messages, userMsg]
+  // ---- 加载模型列表 ----
+  const loadModels = async () => {
+    if (!configBaseUrl || !configApiKey) {
+      alert('请先填写 Base URL 和 API Key');
+      return;
+    }
+    setConfigLoading(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/models`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          base_url: configBaseUrl,
+          api_key: configApiKey
+        })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setAvailableModels(data.models);
+        if (data.models.length > 0) {
+          setConfigModel(data.models[0]);
+        }
+      } else {
+        alert('加载失败：' + data.error);
+      }
+    } catch (e) {
+      alert('请求失败：' + e.message);
+    }
+    setConfigLoading(false);
   };
-  setConversations(prev =>
-    prev.map(c => c.id === updatedConv.id ? updatedConv : c)
-  );
-  setInputText('');
-  scrollToBottom();
 
-  // 3. 显示“正在输入”状态
-  setIsTyping(true);
+  // ---- 保存配置 ----
+  const saveConfig = async () => {
+    if (!adminToken) {
+      alert('请输入管理员 Token');
+      return;
+    }
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/config`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token: adminToken,
+          base_url: configBaseUrl,
+          api_key: configApiKey,
+          model_name: configModel
+        })
+      });
+      const data = await response.json();
+      if (data.success) {
+        alert('配置已保存，下次对话生效！');
+        setSettingsOpen(false);
+      } else {
+        alert('保存失败：' + data.error);
+      }
+    } catch (e) {
+      alert('请求失败：' + e.message);
+    }
+  };
 
-  try {
-    // 4. 调用后端 /chat 接口
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        message: text,
-        sessionId: currentId,
-        // 如果你有设置页，可以传 model 和 systemPrompt 等
-      })
-    });
+  const sendMessage = useCallback(async () => {
+    const text = inputText.trim();
+    if (!text || isTyping) return;
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    let currentId = activeId;
+    let conv = conversations.find(c => c.id === currentId);
+    if (!conv) {
+      const newConv = {
+        id: Date.now(),
+        title: text.length > 14 ? text.slice(0, 14) + '…' : text,
+        time: '刚刚',
+        messages: []
+      };
+      setConversations(prev => [newConv, ...prev]);
+      currentId = newConv.id;
+      setActiveId(currentId);
+      conv = newConv;
     }
 
-    const data = await response.json();
-    // 假设后端返回结构为 { reply: '...' }
-    const reply = data.reply || '抱歉，我没有理解。';
-
-    // 5. 添加 AI 回复到本地状态
-    const aiMsg = { role: 'ai', content: reply };
+    const userMsg = { role: 'user', content: text };
+    const updatedConv = {
+      ...conv,
+      messages: [...conv.messages, userMsg]
+    };
     setConversations(prev =>
-      prev.map(c => {
-        if (c.id === updatedConv.id) {
-          return { ...c, messages: [...c.messages, aiMsg] };
-        }
-        return c;
-      })
+      prev.map(c => c.id === updatedConv.id ? updatedConv : c)
     );
-  } catch (error) {
-    console.error('发送消息失败:', error);
-    // 显示错误提示（可选）
-    const errorMsg = { role: 'ai', content: '⚠️ 连接服务器失败，请稍后重试。' };
-    setConversations(prev =>
-      prev.map(c => {
-        if (c.id === updatedConv.id) {
-          return { ...c, messages: [...c.messages, errorMsg] };
-        }
-        return c;
-      })
-    );
-  } finally {
-    setIsTyping(false);
+    setInputText('');
     scrollToBottom();
-  }
-}, [inputText, activeId, conversations, isTyping, scrollToBottom]);
+
+    setIsTyping(true);
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: text,
+          sessionId: currentId,
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const reply = data.reply || '抱歉，我没有理解。';
+
+      const aiMsg = { role: 'ai', content: reply };
+      setConversations(prev =>
+        prev.map(c => {
+          if (c.id === updatedConv.id) {
+            return { ...c, messages: [...c.messages, aiMsg] };
+          }
+          return c;
+        })
+      );
+    } catch (error) {
+      console.error('发送消息失败:', error);
+      const errorMsg = { role: 'ai', content: '⚠️ 连接服务器失败，请稍后重试。' };
+      setConversations(prev =>
+        prev.map(c => {
+          if (c.id === updatedConv.id) {
+            return { ...c, messages: [...c.messages, errorMsg] };
+          }
+          return c;
+        })
+      );
+    } finally {
+      setIsTyping(false);
+      scrollToBottom();
+    }
+  }, [inputText, activeId, conversations, isTyping, scrollToBottom]);
 
   const openConv = (id) => {
     setActiveId(id);
@@ -342,6 +402,7 @@ export default function Chat() {
         </div>
       </main>
 
+      {/* ---- 设置面板（已扩展 AI 配置） ---- */}
       <div className={`settings-overlay ${settingsOpen ? 'open' : ''}`}>
         <div className="settings-panel">
           <div className="settings-head">
@@ -353,6 +414,135 @@ export default function Chat() {
               </svg>
             </button>
           </div>
+
+          {/* ---- AI 模型配置 ---- */}
+          <div style={{ borderBottom: '1px solid var(--border)', paddingBottom: '15px', marginBottom: '15px' }}>
+            <h4 style={{ marginBottom: '10px', color: 'var(--text-1)', fontSize: '14px', fontWeight: '400' }}>AI 模型配置</h4>
+
+            <div style={{ marginBottom: '8px' }}>
+              <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-2)', marginBottom: '3px' }}>Base URL</label>
+              <input
+                type="text"
+                value={configBaseUrl}
+                onChange={(e) => setConfigBaseUrl(e.target.value)}
+                placeholder="https://api.siliconflow.cn/v1"
+                style={{
+                  width: '100%',
+                  padding: '6px 10px',
+                  borderRadius: 'var(--radius)',
+                  border: '1px solid var(--border-input)',
+                  background: 'var(--bg-input)',
+                  color: 'var(--text-1)',
+                  fontSize: '13px',
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '8px' }}>
+              <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-2)', marginBottom: '3px' }}>API Key</label>
+              <input
+                type="password"
+                value={configApiKey}
+                onChange={(e) => setConfigApiKey(e.target.value)}
+                placeholder="sk-..."
+                style={{
+                  width: '100%',
+                  padding: '6px 10px',
+                  borderRadius: 'var(--radius)',
+                  border: '1px solid var(--border-input)',
+                  background: 'var(--bg-input)',
+                  color: 'var(--text-1)',
+                  fontSize: '13px',
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+              <button
+                onClick={loadModels}
+                disabled={configLoading}
+                style={{
+                  padding: '6px 16px',
+                  background: 'var(--accent-soft)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius)',
+                  color: 'var(--text-1)',
+                  cursor: configLoading ? 'not-allowed' : 'pointer',
+                  fontSize: '12px',
+                  opacity: configLoading ? 0.6 : 1
+                }}
+              >
+                {configLoading ? '加载中...' : '加载模型列表'}
+              </button>
+            </div>
+
+            <div style={{ marginBottom: '8px' }}>
+              <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-2)', marginBottom: '3px' }}>选择模型</label>
+              <select
+                value={configModel}
+                onChange={(e) => setConfigModel(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '6px 10px',
+                  borderRadius: 'var(--radius)',
+                  border: '1px solid var(--border-input)',
+                  background: 'var(--bg-input)',
+                  color: 'var(--text-1)',
+                  fontSize: '13px',
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+              >
+                {availableModels.length === 0 && <option value="">请先加载模型列表</option>}
+                {availableModels.map(m => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-2)', marginBottom: '3px' }}>管理员 Token</label>
+              <input
+                type="password"
+                value={adminToken}
+                onChange={(e) => setAdminToken(e.target.value)}
+                placeholder="输入管理员 Token"
+                style={{
+                  width: '100%',
+                  padding: '6px 10px',
+                  borderRadius: 'var(--radius)',
+                  border: '1px solid var(--border-input)',
+                  background: 'var(--bg-input)',
+                  color: 'var(--text-1)',
+                  fontSize: '13px',
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+
+            <button
+              onClick={saveConfig}
+              style={{
+                padding: '8px 20px',
+                background: 'var(--accent)',
+                border: 'none',
+                borderRadius: 'var(--radius)',
+                color: '#fff',
+                cursor: 'pointer',
+                fontSize: '13px',
+                fontWeight: '400'
+              }}
+            >
+              保存配置
+            </button>
+          </div>
+
+          {/* ---- 外观设置（保留） ---- */}
           <div className="setting-row">
             <span className="setting-label">外观</span>
             <div className="theme-switch">
