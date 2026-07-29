@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import Welcome from './Welcome';
 import Chat from './Chat';
+import HomeMap from './HomeMap';
 
 function App() {
   const [page, setPage] = useState('welcome');
@@ -16,9 +17,9 @@ function App() {
 
   return (
     <>
-      {page === 'welcome' ? (
-        <Welcome onEnter={() => setPage('chat')} />
-      ) : (
+      {page === 'welcome' && <Welcome onEnter={() => setPage('map')} />}
+      {page === 'map' && <HomeMap onReturn={() => setPage('welcome')} />}
+      {page === 'chat' && (
         <Chat theme={theme} onThemeChange={setTheme} />
       )}
     </>
