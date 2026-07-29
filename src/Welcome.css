@@ -1,66 +1,293 @@
 .welcome-root {
+  position: relative;
   display: grid;
   min-height: 100svh;
   place-items: center;
+  overflow: hidden;
   padding: 32px;
-  color: var(--text-primary);
+  color: #f4efe7;
   text-align: center;
   background:
-    radial-gradient(circle at 50% 36%, var(--welcome-glow), transparent 38%),
-    var(--app-bg);
+    radial-gradient(circle at 50% 42%, rgba(120, 150, 190, 0.15), transparent 33%),
+    radial-gradient(circle at 50% 50%, #172238 0%, #090f1d 52%, #040710 100%);
+  opacity: 1;
+  transition:
+    opacity 620ms ease,
+    filter 620ms ease;
 }
 
-.welcome-root > div {
-  max-width: 560px;
+.welcome-stars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.welcome-stars span {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: rgba(225, 235, 249, 0.7);
+  border-radius: 50%;
+  box-shadow: 0 0 5px rgba(151, 192, 236, 0.28);
+  opacity: 0.2;
+  animation: starTwinkle 7s ease-in-out infinite;
+}
+
+.welcome-stars span:nth-child(1) {
+  top: 11%;
+  left: 8%;
+  animation-delay: -1.2s;
+}
+
+.welcome-stars span:nth-child(2) {
+  top: 24%;
+  left: 21%;
+  width: 1px;
+  height: 1px;
+  animation-delay: -4.8s;
+  animation-duration: 9s;
+}
+
+.welcome-stars span:nth-child(3) {
+  top: 9%;
+  left: 42%;
+  animation-delay: -6.1s;
+}
+
+.welcome-stars span:nth-child(4) {
+  top: 18%;
+  left: 73%;
+  width: 1px;
+  height: 1px;
+  animation-delay: -2.7s;
+  animation-duration: 8.5s;
+}
+
+.welcome-stars span:nth-child(5) {
+  top: 31%;
+  left: 91%;
+  animation-delay: -5.5s;
+}
+
+.welcome-stars span:nth-child(6) {
+  top: 54%;
+  left: 10%;
+  width: 1px;
+  height: 1px;
+  animation-delay: -3.4s;
+  animation-duration: 10s;
+}
+
+.welcome-stars span:nth-child(7) {
+  top: 68%;
+  left: 23%;
+  animation-delay: -7.3s;
+}
+
+.welcome-stars span:nth-child(8) {
+  top: 82%;
+  left: 41%;
+  width: 1px;
+  height: 1px;
+  animation-delay: -2.1s;
+  animation-duration: 8s;
+}
+
+.welcome-stars span:nth-child(9) {
+  top: 71%;
+  left: 67%;
+  animation-delay: -6.8s;
+}
+
+.welcome-stars span:nth-child(10) {
+  top: 88%;
+  left: 86%;
+  width: 1px;
+  height: 1px;
+  animation-delay: -4.1s;
+  animation-duration: 9.5s;
+}
+
+.welcome-stars span:nth-child(11) {
+  top: 46%;
+  left: 80%;
+  animation-delay: -1.7s;
+}
+
+.welcome-stars span:nth-child(12) {
+  top: 91%;
+  left: 13%;
+  width: 1px;
+  height: 1px;
+  animation-delay: -5.9s;
+  animation-duration: 11s;
+}
+
+.welcome-root.is-leaving {
+  filter: blur(8px);
+  opacity: 0;
+}
+
+.welcome-enter {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  width: min(94vw, 1200px);
+  align-items: center;
+  flex-direction: column;
+  padding: 54px 64px;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.welcome-kicker {
+  margin-bottom: 26px;
+  color: rgba(212, 220, 233, 0.56);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
 }
 
 .welcome-title {
-  margin: 0;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(34px, 5vw, 54px);
+  font-size: clamp(34px, 5vw, 72px);
   font-weight: 400;
-  line-height: 1.15;
-  letter-spacing: -0.035em;
+  line-height: 1.08;
+  letter-spacing: -0.045em;
+  text-shadow: 0 12px 44px rgba(0, 0, 0, 0.34);
+  white-space: nowrap;
 }
 
 .welcome-sub {
-  margin: 18px 0 42px;
-  color: var(--text-secondary);
-  font-size: 15px;
-  letter-spacing: 0.04em;
+  margin-top: 21px;
+  color: rgba(224, 228, 237, 0.66);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(15px, 1.55vw, 20px);
+  font-style: italic;
+  letter-spacing: 0.055em;
 }
 
-.welcome-btn {
-  min-width: 156px;
-  padding: 12px 24px;
-  color: var(--button-text);
-  background: var(--accent-strong);
-  border: 1px solid var(--accent-border);
-  border-radius: 8px;
-  box-shadow: 0 12px 30px var(--shadow-soft);
-  cursor: pointer;
+.welcome-hint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 58px;
+  color: rgba(217, 224, 237, 0.48);
+  font-size: 11px;
+  letter-spacing: 0.2em;
   transition:
-    transform 160ms ease,
-    background 160ms ease,
-    border-color 160ms ease;
+    color 200ms ease,
+    transform 200ms ease;
 }
 
-.welcome-btn:hover {
-  background: var(--accent-hover);
-  transform: translateY(-1px);
+.welcome-hint span {
+  color: #d6b47d;
+  font-size: 8px;
 }
 
-.welcome-btn:focus-visible {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 3px;
+.welcome-enter:hover .welcome-hint {
+  color: rgba(244, 239, 231, 0.88);
+  transform: translateY(-2px);
 }
 
-.welcome-btn:active {
-  transform: translateY(0);
+.welcome-enter:focus-visible {
+  outline: 1px solid rgba(214, 180, 125, 0.7);
+  outline-offset: -8px;
+  border-radius: 28px;
+}
+
+.welcome-footnote {
+  position: absolute;
+  bottom: max(28px, env(safe-area-inset-bottom));
+  z-index: 2;
+  margin: 0;
+  color: rgba(200, 208, 222, 0.32);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 10px;
+  font-style: italic;
+  letter-spacing: 0.16em;
+}
+
+.welcome-orbit {
+  position: absolute;
+  border: 1px solid rgba(131, 155, 194, 0.08);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.welcome-orbit-one {
+  width: min(70vw, 880px);
+  aspect-ratio: 1;
+  transform: rotate(-14deg) scaleY(0.42);
+}
+
+.welcome-orbit-two {
+  width: min(46vw, 580px);
+  aspect-ratio: 1;
+  border-color: rgba(214, 180, 125, 0.07);
+  transform: rotate(24deg) scaleY(0.42);
+}
+
+@media (max-width: 640px) {
+  .welcome-root {
+    padding: 20px;
+  }
+
+  .welcome-enter {
+    width: 100%;
+    padding: 42px 12px;
+  }
+
+  .welcome-kicker {
+    margin-bottom: 22px;
+  }
+
+  .welcome-title {
+    max-width: none;
+    font-size: clamp(25px, 8.2vw, 42px);
+    letter-spacing: -0.04em;
+  }
+
+  .welcome-sub {
+    margin-top: 17px;
+  }
+
+  .welcome-hint {
+    margin-top: 48px;
+  }
+
+  .welcome-footnote {
+    letter-spacing: 0.1em;
+  }
+
+  .welcome-stars span:nth-child(n + 8) {
+    display: none;
+  }
+}
+
+@keyframes starTwinkle {
+  0%,
+  100% {
+    opacity: 0.12;
+    transform: scale(0.75);
+  }
+  50% {
+    opacity: 0.42;
+    transform: scale(1.08);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .welcome-btn {
+  .welcome-root,
+  .welcome-hint {
     transition: none;
+  }
+
+  .welcome-stars span {
+    opacity: 0.24;
+    animation: none;
   }
 }
