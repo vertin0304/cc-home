@@ -14,7 +14,7 @@ export default function Welcome({ onEnter }) {
   return (
     <main className={`welcome-root${isLeaving ? ' is-leaving' : ''}`}>
       <div className="welcome-stars" aria-hidden="true">
-        {Array.from({ length: 12 }, (_, index) => (
+        {Array.from({ length: 41 }, (_, index) => (
           <span key={index} />
         ))}
       </div>
