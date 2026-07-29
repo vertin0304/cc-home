@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import './HomeMap.css';
 
 const places = {
@@ -18,7 +18,14 @@ const places = {
 
 export default function HomeMap({ onReturn }) {
   const [selectedPlace, setSelectedPlace] = useState(null);
+  const [pressedPlace, setPressedPlace] = useState(null);
+  const feedbackTimerRef = useRef(null);
   const place = selectedPlace ? places[selectedPlace] : null;
+
+  useEffect(
+    () => () => window.clearTimeout(feedbackTimerRef.current),
+    [],
+  );
 
   useEffect(() => {
     if (!selectedPlace) return undefined;
@@ -30,6 +37,24 @@ export default function HomeMap({ onReturn }) {
     return () => window.removeEventListener('keydown', closeOnEscape);
   }, [selectedPlace]);
 
+  const openPlace = (placeId) => {
+    const isPortraitMobile = window.matchMedia(
+      '(max-width: 700px) and (orientation: portrait)',
+    ).matches;
+
+    if (!isPortraitMobile) {
+      setSelectedPlace(placeId);
+      return;
+    }
+
+    window.clearTimeout(feedbackTimerRef.current);
+    setPressedPlace(placeId);
+    feedbackTimerRef.current = window.setTimeout(() => {
+      setSelectedPlace(placeId);
+      setPressedPlace(null);
+    }, 280);
+  };
+
   return (
     <main className="map-page">
       <header className="map-header">
@@ -37,7 +62,6 @@ export default function HomeMap({ onReturn }) {
           <span className="map-brand-mark" aria-hidden="true">✦</span>
           <span>cc — home</span>
         </button>
-        <p>选择一个亮着灯的地方</p>
       </header>
 
       <div className="map-viewport">
@@ -50,36 +74,23 @@ export default function HomeMap({ onReturn }) {
           <div className="map-vignette" aria-hidden="true" />
 
           <button
-            className="map-hotspot hotspot-home"
+            className={`map-hotspot hotspot-home${pressedPlace === 'home' ? ' is-pressed' : ''}`}
             aria-label="打开家"
-            onClick={() => setSelectedPlace('home')}
+            onClick={() => openPlace('home')}
             type="button"
           >
             <span className="hotspot-beacon" aria-hidden="true" />
-            <span className="hotspot-label">
-              <small>临水而居</small>
-              家
-            </span>
           </button>
 
           <button
-            className="map-hotspot hotspot-tavern"
+            className={`map-hotspot hotspot-tavern${pressedPlace === 'tavern' ? ' is-pressed' : ''}`}
             aria-label="打开冬夜酒馆"
-            onClick={() => setSelectedPlace('tavern')}
+            onClick={() => openPlace('tavern')}
             type="button"
           >
             <span className="hotspot-beacon" aria-hidden="true" />
-            <span className="hotspot-label">
-              <small>雪地暖灯</small>
-              冬夜酒馆
-            </span>
           </button>
         </div>
-      </div>
-
-      <div className="map-status" aria-hidden="true">
-        <span />
-        其余地点尚未开放
       </div>
 
       <div

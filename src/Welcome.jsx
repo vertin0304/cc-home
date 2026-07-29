@@ -13,6 +13,11 @@ export default function Welcome({ onEnter }) {
 
   return (
     <main className={`welcome-root${isLeaving ? ' is-leaving' : ''}`}>
+      <div className="welcome-stars" aria-hidden="true">
+        {Array.from({ length: 12 }, (_, index) => (
+          <span key={index} />
+        ))}
+      </div>
       <span className="welcome-orbit welcome-orbit-one" aria-hidden="true" />
       <span className="welcome-orbit welcome-orbit-two" aria-hidden="true" />
 

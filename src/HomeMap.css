@@ -13,15 +13,16 @@
   height: 100%;
   align-items: center;
   justify-content: center;
-  overflow: auto hidden;
+  overflow: hidden;
   scrollbar-color: rgba(227, 195, 145, 0.44) rgba(3, 7, 18, 0.72);
   scrollbar-width: thin;
 }
 
 .map-canvas {
   position: relative;
-  width: min(100vw, calc(100svh * 1.7768));
-  min-width: min(100vw, calc(100svh * 1.7768));
+  width: max(100vw, calc(100svh * 1.7768));
+  min-width: max(100vw, calc(100svh * 1.7768));
+  height: max(100svh, calc(100vw / 1.7768));
   aspect-ratio: 1672 / 941;
   flex: 0 0 auto;
   overflow: hidden;
@@ -35,7 +36,7 @@
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: fill;
   user-select: none;
 }
 
@@ -50,11 +51,9 @@
 
 .map-header {
   position: fixed;
-  inset: max(22px, env(safe-area-inset-top)) 30px auto;
+  top: max(22px, env(safe-area-inset-top));
+  left: 30px;
   z-index: 20;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   pointer-events: none;
 }
 
@@ -83,18 +82,6 @@
 .map-brand-mark {
   color: #efc982;
   font-size: 8px;
-}
-
-.map-header p {
-  margin: 0;
-  padding: 9px 13px;
-  color: rgba(239, 241, 246, 0.7);
-  background: rgba(5, 11, 24, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 999px;
-  font-size: 10px;
-  letter-spacing: 0.16em;
-  backdrop-filter: blur(14px);
 }
 
 .map-hotspot {
@@ -148,7 +135,8 @@
 }
 
 .map-hotspot:hover::after,
-.map-hotspot:focus-visible::after {
+.map-hotspot:focus-visible::after,
+.map-hotspot.is-pressed::after {
   border-color: rgba(255, 221, 164, 0.2);
   box-shadow: inset 0 0 42px rgba(255, 179, 78, 0.12);
 }
@@ -174,60 +162,6 @@
   border-radius: 50%;
   content: '';
   animation: mapPulse 2.6s ease-out infinite;
-}
-
-.hotspot-label {
-  position: absolute;
-  top: 46%;
-  left: 46%;
-  display: flex;
-  min-width: max-content;
-  flex-direction: column;
-  gap: 2px;
-  padding: 7px 11px 8px;
-  color: #fff8ed;
-  text-align: left;
-  background: rgba(4, 10, 22, 0.68);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 9px;
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.26);
-  font-size: clamp(11px, 0.9vw, 14px);
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  backdrop-filter: blur(10px);
-  transform: translate(-50%, 12px);
-}
-
-.hotspot-label small {
-  color: rgba(228, 219, 207, 0.58);
-  font-size: clamp(7px, 0.54vw, 9px);
-  font-weight: 500;
-  letter-spacing: 0.11em;
-}
-
-.map-status {
-  position: fixed;
-  right: 30px;
-  bottom: max(24px, env(safe-area-inset-bottom));
-  z-index: 15;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 11px;
-  color: rgba(220, 228, 239, 0.48);
-  background: rgba(4, 9, 20, 0.42);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 999px;
-  font-size: 9px;
-  letter-spacing: 0.12em;
-  backdrop-filter: blur(10px);
-}
-
-.map-status span {
-  width: 5px;
-  height: 5px;
-  background: #5f6d83;
-  border-radius: 50%;
 }
 
 .place-overlay {
@@ -376,37 +310,44 @@
   }
 }
 
+@keyframes hotspotMist {
+  0% {
+    background: rgba(210, 231, 242, 0);
+    box-shadow: inset 0 0 20px rgba(225, 236, 243, 0);
+  }
+  45% {
+    background: rgba(210, 231, 242, 0.14);
+    box-shadow: inset 0 0 48px rgba(225, 236, 243, 0.2);
+  }
+  100% {
+    background: rgba(210, 231, 242, 0);
+    box-shadow: inset 0 0 68px rgba(225, 236, 243, 0);
+  }
+}
+
 @media (max-width: 700px) and (orientation: portrait) {
   .map-viewport {
     justify-content: flex-start;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
   }
 
   .map-canvas {
     width: calc(100svh * 1.7768);
     min-width: calc(100svh * 1.7768);
     height: 100svh;
+    min-height: 100svh;
+    scroll-snap-align: start;
   }
 
   .map-header {
-    right: 16px;
     left: 16px;
   }
 
-  .map-header p {
-    display: none;
-  }
-
-  .map-status {
-    right: 16px;
-    bottom: max(14px, env(safe-area-inset-bottom));
-  }
-
-  .hotspot-label {
-    font-size: 12px;
-  }
-
-  .hotspot-label small {
-    font-size: 8px;
+  .map-hotspot.is-pressed {
+    animation: hotspotMist 280ms ease-out;
   }
 }
 
@@ -435,5 +376,9 @@
   .place-overlay,
   .place-card {
     transition: none;
+  }
+
+  .map-hotspot.is-pressed {
+    animation: none;
   }
 }

@@ -16,17 +16,111 @@
     filter 620ms ease;
 }
 
-.welcome-root::before {
+.welcome-stars {
   position: absolute;
   inset: 0;
-  background-image:
-    radial-gradient(circle at 18% 30%, rgba(255, 255, 255, 0.56) 0 1px, transparent 1.5px),
-    radial-gradient(circle at 76% 19%, rgba(160, 206, 255, 0.5) 0 1px, transparent 1.5px),
-    radial-gradient(circle at 64% 74%, rgba(255, 218, 165, 0.46) 0 1px, transparent 1.5px);
-  background-size: 220px 190px, 310px 270px, 260px 240px;
-  content: '';
-  opacity: 0.42;
   pointer-events: none;
+}
+
+.welcome-stars span {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: rgba(225, 235, 249, 0.7);
+  border-radius: 50%;
+  box-shadow: 0 0 5px rgba(151, 192, 236, 0.28);
+  opacity: 0.2;
+  animation: starTwinkle 7s ease-in-out infinite;
+}
+
+.welcome-stars span:nth-child(1) {
+  top: 11%;
+  left: 8%;
+  animation-delay: -1.2s;
+}
+
+.welcome-stars span:nth-child(2) {
+  top: 24%;
+  left: 21%;
+  width: 1px;
+  height: 1px;
+  animation-delay: -4.8s;
+  animation-duration: 9s;
+}
+
+.welcome-stars span:nth-child(3) {
+  top: 9%;
+  left: 42%;
+  animation-delay: -6.1s;
+}
+
+.welcome-stars span:nth-child(4) {
+  top: 18%;
+  left: 73%;
+  width: 1px;
+  height: 1px;
+  animation-delay: -2.7s;
+  animation-duration: 8.5s;
+}
+
+.welcome-stars span:nth-child(5) {
+  top: 31%;
+  left: 91%;
+  animation-delay: -5.5s;
+}
+
+.welcome-stars span:nth-child(6) {
+  top: 54%;
+  left: 10%;
+  width: 1px;
+  height: 1px;
+  animation-delay: -3.4s;
+  animation-duration: 10s;
+}
+
+.welcome-stars span:nth-child(7) {
+  top: 68%;
+  left: 23%;
+  animation-delay: -7.3s;
+}
+
+.welcome-stars span:nth-child(8) {
+  top: 82%;
+  left: 41%;
+  width: 1px;
+  height: 1px;
+  animation-delay: -2.1s;
+  animation-duration: 8s;
+}
+
+.welcome-stars span:nth-child(9) {
+  top: 71%;
+  left: 67%;
+  animation-delay: -6.8s;
+}
+
+.welcome-stars span:nth-child(10) {
+  top: 88%;
+  left: 86%;
+  width: 1px;
+  height: 1px;
+  animation-delay: -4.1s;
+  animation-duration: 9.5s;
+}
+
+.welcome-stars span:nth-child(11) {
+  top: 46%;
+  left: 80%;
+  animation-delay: -1.7s;
+}
+
+.welcome-stars span:nth-child(12) {
+  top: 91%;
+  left: 13%;
+  width: 1px;
+  height: 1px;
+  animation-delay: -5.9s;
+  animation-duration: 11s;
 }
 
 .welcome-root.is-leaving {
@@ -38,7 +132,7 @@
   position: relative;
   z-index: 2;
   display: flex;
-  max-width: 760px;
+  width: min(94vw, 1200px);
   align-items: center;
   flex-direction: column;
   padding: 54px 64px;
@@ -59,11 +153,12 @@
 
 .welcome-title {
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(38px, 5.5vw, 76px);
+  font-size: clamp(34px, 5vw, 72px);
   font-weight: 400;
   line-height: 1.08;
   letter-spacing: -0.045em;
   text-shadow: 0 12px 44px rgba(0, 0, 0, 0.34);
+  white-space: nowrap;
 }
 
 .welcome-sub {
@@ -151,8 +246,9 @@
   }
 
   .welcome-title {
-    max-width: 340px;
-    font-size: clamp(38px, 12vw, 54px);
+    max-width: none;
+    font-size: clamp(25px, 8.2vw, 42px);
+    letter-spacing: -0.04em;
   }
 
   .welcome-sub {
@@ -166,11 +262,32 @@
   .welcome-footnote {
     letter-spacing: 0.1em;
   }
+
+  .welcome-stars span:nth-child(n + 8) {
+    display: none;
+  }
+}
+
+@keyframes starTwinkle {
+  0%,
+  100% {
+    opacity: 0.12;
+    transform: scale(0.75);
+  }
+  50% {
+    opacity: 0.42;
+    transform: scale(1.08);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .welcome-root,
   .welcome-hint {
     transition: none;
+  }
+
+  .welcome-stars span {
+    opacity: 0.24;
+    animation: none;
   }
 }
