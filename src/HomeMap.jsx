@@ -16,7 +16,7 @@ const places = {
   },
 };
 
-export default function HomeMap({ onReturn }) {
+export default function HomeMap({ onOpenHome, onReturn }) {
   const [selectedPlace, setSelectedPlace] = useState(null);
   const [pressedPlace, setPressedPlace] = useState(null);
   const feedbackTimerRef = useRef(null);
@@ -55,6 +55,24 @@ export default function HomeMap({ onReturn }) {
     }, 280);
   };
 
+  const openHome = () => {
+    const isPortraitMobile = window.matchMedia(
+      '(max-width: 700px) and (orientation: portrait)',
+    ).matches;
+
+    if (!isPortraitMobile) {
+      onOpenHome();
+      return;
+    }
+
+    window.clearTimeout(feedbackTimerRef.current);
+    setPressedPlace('home');
+    feedbackTimerRef.current = window.setTimeout(() => {
+      setPressedPlace(null);
+      onOpenHome();
+    }, 280);
+  };
+
   return (
     <main className="map-page">
       <header className="map-header">
@@ -76,7 +94,7 @@ export default function HomeMap({ onReturn }) {
           <button
             className={`map-hotspot hotspot-home${pressedPlace === 'home' ? ' is-pressed' : ''}`}
             aria-label="打开家"
-            onClick={() => openPlace('home')}
+            onClick={openHome}
             type="button"
           >
             <span className="hotspot-beacon" aria-hidden="true" />
