@@ -1,0 +1,165 @@
+.login-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  padding: 24px;
+  place-items: center;
+  background: rgba(48, 31, 24, 0.5);
+  backdrop-filter: blur(15px) saturate(0.82);
+}
+
+.login-card {
+  position: relative;
+  width: min(490px, 100%);
+  padding: 42px 42px 34px;
+  color: #f4e7d2;
+  background:
+    radial-gradient(circle at 16% 4%, rgba(221, 169, 99, 0.16), transparent 42%),
+    linear-gradient(145deg, rgba(74, 53, 43, 0.97), rgba(42, 39, 36, 0.97));
+  border: 1px solid rgba(239, 204, 151, 0.22);
+  border-radius: 24px;
+  box-shadow: 0 28px 90px rgba(25, 16, 12, 0.42);
+}
+
+.login-close {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  color: rgba(249, 234, 211, 0.7);
+  background: rgba(255, 245, 227, 0.04);
+  border: 1px solid rgba(249, 231, 203, 0.14);
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 20px;
+}
+
+.login-heading {
+  margin-bottom: 31px;
+  text-align: center;
+}
+
+.login-kicker {
+  color: rgba(224, 182, 119, 0.7);
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.login-heading h1 {
+  margin: 14px 0 7px;
+  color: #f8ead3;
+  font-family: Georgia, "Songti SC", serif;
+  font-size: clamp(25px, 5vw, 31px);
+  font-weight: 400;
+  letter-spacing: 0.025em;
+  white-space: nowrap;
+}
+
+.login-heading p {
+  margin: 0;
+  color: rgba(237, 210, 170, 0.58);
+  font-family: Georgia, serif;
+  font-size: 12px;
+  font-style: italic;
+  letter-spacing: 0.14em;
+}
+
+.login-form {
+  display: grid;
+  gap: 17px;
+}
+
+.login-form label {
+  display: grid;
+  gap: 7px;
+}
+
+.login-form label span {
+  color: rgba(238, 222, 200, 0.65);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+
+.login-form input {
+  width: 100%;
+  min-height: 45px;
+  padding: 0 13px;
+  color: #f8ead5;
+  background: rgba(28, 28, 27, 0.32);
+  border: 1px solid rgba(235, 203, 157, 0.16);
+  border-radius: 12px;
+  outline: none;
+}
+
+.login-form input:focus {
+  border-color: rgba(231, 185, 119, 0.55);
+  box-shadow: 0 0 0 3px rgba(211, 159, 91, 0.08);
+}
+
+.login-error {
+  margin: -4px 0 0;
+  color: #f1b9aa;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.login-submit {
+  min-height: 45px;
+  margin-top: 2px;
+  color: #fff3df;
+  background: rgba(181, 125, 79, 0.72);
+  border: 1px solid rgba(237, 194, 132, 0.3);
+  border-radius: 12px;
+  cursor: pointer;
+  letter-spacing: 0.12em;
+}
+
+.login-submit:hover:not(:disabled),
+.login-submit:focus-visible:not(:disabled) {
+  background: rgba(194, 136, 87, 0.86);
+  outline: none;
+}
+
+.login-submit:disabled {
+  cursor: wait;
+  opacity: 0.58;
+}
+
+.login-note {
+  margin: 20px 0 0;
+  color: rgba(223, 207, 185, 0.43);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  line-height: 1.6;
+  text-align: center;
+}
+
+@media (max-width: 700px) {
+  .login-layer {
+    align-items: stretch;
+    padding: 0;
+    background: #46342c;
+  }
+
+  .login-card {
+    display: flex;
+    width: 100%;
+    min-height: 100dvh;
+    padding:
+      max(72px, calc(env(safe-area-inset-top) + 54px))
+      26px
+      max(26px, env(safe-area-inset-bottom));
+    flex-direction: column;
+    justify-content: center;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .login-heading h1 {
+    font-size: clamp(21px, 6.4vw, 31px);
+  }
+}
