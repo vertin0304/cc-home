@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import ChatShell from './components/chat/ChatShell';
 import { ChatAuthError } from './lib/chatApi';
 import './Chat.css';
@@ -41,6 +41,7 @@ export default function Chat({
   onClose,
   onRequireLogin,
   onSignOut,
+  returnLabel,
 }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -51,6 +52,7 @@ export default function Chat({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeView, setActiveView] = useState('chat');
   const messageListRef = useRef(null);
+  const scrollPositionRef = useRef(0);
 
   const resetShell = useCallback(() => {
     setIsSidebarOpen(false);
@@ -58,6 +60,9 @@ export default function Chat({
   }, []);
 
   const closeChat = useCallback(() => {
+    if (messageListRef.current) {
+      scrollPositionRef.current = messageListRef.current.scrollTop;
+    }
     resetShell();
     onClose();
   }, [onClose, resetShell]);
@@ -114,6 +119,16 @@ export default function Chat({
     messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
   }, [messages, isSending]);
 
+  useLayoutEffect(() => {
+    if (!isOpen || !messageListRef.current) return undefined;
+    const frame = window.requestAnimationFrame(() => {
+      if (messageListRef.current) {
+        messageListRef.current.scrollTop = scrollPositionRef.current;
+      }
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [isOpen]);
+
   const send = async (event) => {
     event?.preventDefault();
     const text = input.trim();
@@ -169,8 +184,15 @@ export default function Chat({
       }}
       onSignOut={onSignOut}
       onToggleSidebar={() => setIsSidebarOpen((current) => !current)}
+      returnLabel={returnLabel}
     >
-      <div className="main-chat-messages" ref={messageListRef}>
+      <div
+        className="main-chat-messages"
+        onScroll={(event) => {
+          scrollPositionRef.current = event.currentTarget.scrollTop;
+        }}
+        ref={messageListRef}
+      >
         {historyState === 'loading' && (
           <div className="main-chat-loading" role="status">
             <span aria-hidden="true" />

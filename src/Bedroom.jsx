@@ -1,12 +1,11 @@
 import { useLayoutEffect, useRef } from 'react';
 import SceneHotspot from './components/scene/SceneHotspot';
-import './LivingRoom.css';
+import './Bedroom.css';
 
 const MOBILE_QUERY = '(max-width: 700px) and (orientation: portrait)';
 
-export default function LivingRoom({
+export default function Bedroom({
   getInitialScrollRatio,
-  onOpenBedroom,
   onOpenChat,
   onReturn,
   onScrollPositionChange,
@@ -34,51 +33,44 @@ export default function LivingRoom({
   };
 
   return (
-    <main className="living-room">
-      <div className="living-room-ambient" aria-hidden="true" />
+    <main className="bedroom">
+      <div className="bedroom-ambient" aria-hidden="true" />
 
-      <header className="living-room-header">
+      <header className="bedroom-header">
         <button
-          className="living-room-back"
-          aria-label="返回地图"
+          aria-label="返回客厅"
+          className="bedroom-back"
           onClick={onReturn}
           type="button"
         >
-          <span className="living-room-back-mark" aria-hidden="true">←</span>
-          <span>cc — home</span>
+          <span className="bedroom-back-mark" aria-hidden="true">←</span>
+          <span>返回客厅</span>
         </button>
       </header>
 
       <div
-        className="living-room-viewport"
+        className="bedroom-viewport"
         onScroll={rememberScrollPosition}
         ref={viewportRef}
       >
-        <div className="living-room-canvas">
+        <div className="bedroom-canvas">
           <img
-            className="living-room-image"
-            src="/home.png"
-            alt="夕阳下临水的客厅，茶几上放着两只杯子"
+            alt="夜色中的卧室，床头柜上放着闹钟和两部手机"
+            className="bedroom-image"
+            src="/bedroom.png"
           />
-          <div className="living-room-vignette" aria-hidden="true" />
+          <div className="bedroom-vignette" aria-hidden="true" />
 
           <SceneHotspot
-            ariaLabel="通过情侣水杯打开主聊天"
-            className="cups-hotspot"
-            feedbackDelay={260}
+            ariaLabel="打开聊天"
+            className="bedroom-hotspot bedroom-phones-hotspot"
             onActivate={onOpenChat}
-          >
-            <span className="cups-steam cups-steam-one" aria-hidden="true" />
-            <span className="cups-steam cups-steam-two" aria-hidden="true" />
-          </SceneHotspot>
-
-          <SceneHotspot
-            ariaLabel="进入卧室"
-            className="bedroom-door-hotspot"
-            feedbackDelay={260}
-            onActivate={onOpenBedroom}
           />
 
+          <SceneHotspot
+            ariaLabel="闹钟功能暂未开放"
+            className="bedroom-hotspot bedroom-clock-hotspot"
+          />
         </div>
       </div>
     </main>

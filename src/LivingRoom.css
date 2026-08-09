@@ -113,6 +113,63 @@
   outline: none;
 }
 
+.bedroom-door-hotspot {
+  position: absolute;
+  top: 7%;
+  left: 84.8%;
+  z-index: 5;
+  width: 13.8%;
+  height: 50.5%;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 11% 11% 18% 14%;
+  cursor: pointer;
+  outline: none;
+  touch-action: pan-x;
+}
+
+.bedroom-door-hotspot::before,
+.bedroom-door-hotspot::after {
+  position: absolute;
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 260ms ease, transform 420ms ease;
+}
+
+.bedroom-door-hotspot::before {
+  inset: 2% 3%;
+  border-radius: inherit;
+  background: radial-gradient(
+    ellipse at 56% 52%,
+    rgba(255, 210, 139, 0.14),
+    rgba(218, 151, 76, 0.07) 46%,
+    transparent 76%
+  );
+  filter: blur(10px);
+  transform: scale(0.96);
+}
+
+.bedroom-door-hotspot::after {
+  inset: 4%;
+  border-radius: inherit;
+  box-shadow: inset 0 0 36px rgba(255, 203, 125, 0.12);
+  transform: scale(0.97);
+}
+
+.bedroom-door-hotspot:focus-visible::before,
+.bedroom-door-hotspot:focus-visible::after,
+.bedroom-door-hotspot.is-pressed::before,
+.bedroom-door-hotspot.is-pressed::after {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.bedroom-door-hotspot:focus-visible {
+  box-shadow: 0 0 0 1px rgba(245, 207, 146, 0.24);
+}
+
 .cups-hotspot::before,
 .cups-hotspot::after {
   position: absolute;
@@ -189,6 +246,8 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
+  .bedroom-door-hotspot:hover::before,
+  .bedroom-door-hotspot:hover::after,
   .cups-hotspot:hover::before,
   .cups-hotspot:hover::after {
     opacity: 1;
@@ -535,6 +594,8 @@
 @media (prefers-reduced-motion: reduce) {
   .cups-hotspot::before,
   .cups-hotspot::after,
+  .bedroom-door-hotspot::before,
+  .bedroom-door-hotspot::after,
   .cups-steam,
   .living-room-scrim,
   .living-room-canvas,

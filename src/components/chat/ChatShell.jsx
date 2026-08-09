@@ -11,6 +11,7 @@ export default function ChatShell({
   onSelectMainChat,
   onSignOut,
   onToggleSidebar,
+  returnLabel,
 }) {
   return (
     <div className="main-chat-layer" role="presentation">
@@ -60,13 +61,13 @@ export default function ChatShell({
                 登出
               </button>
               <button
-                aria-label="关闭聊天并返回客厅"
+                aria-label={`关闭聊天并${returnLabel}`}
                 className="main-chat-close"
                 onClick={onClose}
                 type="button"
               >
                 <span aria-hidden="true">←</span>
-                <span>返回客厅</span>
+                <span>{returnLabel}</span>
               </button>
             </div>
           </header>
