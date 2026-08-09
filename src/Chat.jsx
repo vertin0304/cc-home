@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import ChatShell from './components/chat/ChatShell';
 import { ChatAuthError } from './lib/chatApi';
 import './Chat.css';
 
@@ -47,7 +48,24 @@ export default function Chat({
   const [historyError, setHistoryError] = useState('');
   const [sendError, setSendError] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [activeView, setActiveView] = useState('chat');
   const messageListRef = useRef(null);
+
+  const resetShell = useCallback(() => {
+    setIsSidebarOpen(false);
+    setActiveView('chat');
+  }, []);
+
+  const closeChat = useCallback(() => {
+    resetShell();
+    onClose();
+  }, [onClose, resetShell]);
+
+  const requireLogin = useCallback(() => {
+    resetShell();
+    onRequireLogin();
+  }, [onRequireLogin, resetShell]);
 
   const loadHistory = useCallback(async () => {
     if (!userId) return;
@@ -59,13 +77,13 @@ export default function Chat({
       setHistoryState('ready');
     } catch (error) {
       if (error instanceof ChatAuthError) {
-        onRequireLogin();
+        requireLogin();
         return;
       }
       setHistoryState('error');
       setHistoryError('暂时没有取回聊天记录。');
     }
-  }, [api, onRequireLogin, userId]);
+  }, [api, requireLogin, userId]);
 
   useEffect(() => {
     if (!isOpen || !userId || historyState !== 'idle') return undefined;
@@ -76,11 +94,20 @@ export default function Chat({
   useEffect(() => {
     if (!isOpen) return undefined;
     const closeOnEscape = (event) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key !== 'Escape') return;
+      if (isSidebarOpen) {
+        setIsSidebarOpen(false);
+        return;
+      }
+      if (activeView === 'settings') {
+        setActiveView('chat');
+        return;
+      }
+      closeChat();
     };
     window.addEventListener('keydown', closeOnEscape);
     return () => window.removeEventListener('keydown', closeOnEscape);
-  }, [isOpen, onClose]);
+  }, [activeView, closeChat, isOpen, isSidebarOpen]);
 
   useEffect(() => {
     if (!messageListRef.current) return;
@@ -115,7 +142,7 @@ export default function Chat({
       setInput('');
     } catch (error) {
       if (error instanceof ChatAuthError) {
-        onRequireLogin();
+        requireLogin();
         return;
       }
       setSendError('这句话暂时没有送达，内容还留在输入框里。');
@@ -127,109 +154,96 @@ export default function Chat({
   if (!isOpen) return null;
 
   return (
-    <div className="main-chat-layer" role="presentation">
-      <section
-        aria-labelledby="main-chat-title"
-        aria-modal="true"
-        className="main-chat-panel"
-        role="dialog"
-      >
-        <header className="main-chat-header">
-          <div>
-            <span className="main-chat-eyebrow">Our quiet room</span>
-            <h1 id="main-chat-title">一起坐一会儿</h1>
+    <ChatShell
+      isSettingsOpen={activeView === 'settings'}
+      isSidebarOpen={isSidebarOpen}
+      onClose={closeChat}
+      onCloseSidebar={() => setIsSidebarOpen(false)}
+      onOpenSettings={() => {
+        setActiveView('settings');
+        setIsSidebarOpen(false);
+      }}
+      onSelectMainChat={() => {
+        setActiveView('chat');
+        setIsSidebarOpen(false);
+      }}
+      onSignOut={onSignOut}
+      onToggleSidebar={() => setIsSidebarOpen((current) => !current)}
+    >
+      <div className="main-chat-messages" ref={messageListRef}>
+        {historyState === 'loading' && (
+          <div className="main-chat-loading" role="status">
+            <span aria-hidden="true" />
+            正在把我们的聊天带回来…
           </div>
-          <div className="main-chat-actions">
-            <button className="main-chat-signout" onClick={onSignOut} type="button">
-              登出
-            </button>
-            <button
-              aria-label="收起聊天"
-              className="main-chat-close"
-              onClick={onClose}
-              type="button"
-            >
-              <span aria-hidden="true">←</span>
-              <span>返回房间</span>
-            </button>
+        )}
+
+        {historyState === 'error' && (
+          <div className="main-chat-status" role="alert">
+            <p>{historyError}</p>
+            <button onClick={loadHistory} type="button">重新读取</button>
           </div>
-        </header>
+        )}
 
-        <div className="main-chat-messages" ref={messageListRef}>
-          {historyState === 'loading' && (
-            <div className="main-chat-loading" role="status">
-              <span aria-hidden="true" />
-              正在把我们的聊天带回来…
-            </div>
-          )}
+        {historyState === 'ready' && messages.length === 0 && (
+          <div className="main-chat-empty">
+            <span aria-hidden="true">✦</span>
+            <p>灯亮着，想说什么都可以。</p>
+          </div>
+        )}
 
-          {historyState === 'error' && (
-            <div className="main-chat-status" role="alert">
-              <p>{historyError}</p>
-              <button onClick={loadHistory} type="button">重新读取</button>
-            </div>
-          )}
+        {messages.map((message) => (
+          <article
+            className={`main-chat-message is-${message.role}`}
+            key={message.id}
+          >
+            <div>{message.content}</div>
+            {formatTime(message.createdAt) && (
+              <time dateTime={message.createdAt}>{formatTime(message.createdAt)}</time>
+            )}
+          </article>
+        ))}
 
-          {historyState === 'ready' && messages.length === 0 && (
-            <div className="main-chat-empty">
-              <span aria-hidden="true">✦</span>
-              <p>灯亮着，想说什么都可以。</p>
-            </div>
-          )}
+        {isSending && (
+          <div className="main-chat-sending" role="status">
+            <span />
+            <span />
+            <span />
+          </div>
+        )}
+      </div>
 
-          {messages.map((message) => (
-            <article
-              className={`main-chat-message is-${message.role}`}
-              key={message.id}
-            >
-              <div>{message.content}</div>
-              {formatTime(message.createdAt) && (
-                <time dateTime={message.createdAt}>{formatTime(message.createdAt)}</time>
-              )}
-            </article>
-          ))}
-
-          {isSending && (
-            <div className="main-chat-sending" role="status">
-              <span />
-              <span />
-              <span />
-            </div>
-          )}
+      <form className="main-chat-composer" onSubmit={send}>
+        {sendError && (
+          <div className="main-chat-send-error" role="alert">
+            <span>{sendError}</span>
+            <button disabled={isSending} onClick={send} type="button">重试</button>
+          </div>
+        )}
+        <div className="main-chat-compose-row">
+          <textarea
+            aria-label="输入消息"
+            disabled={isSending || historyState === 'loading'}
+            onChange={(event) => setInput(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                send();
+              }
+            }}
+            placeholder="说点什么…"
+            rows="2"
+            value={input}
+          />
+          <button
+            disabled={!input.trim() || isSending || historyState === 'loading'}
+            type="submit"
+          >
+            {isSending ? '发送中' : '发送'}
+          </button>
         </div>
-
-        <form className="main-chat-composer" onSubmit={send}>
-          {sendError && (
-            <div className="main-chat-send-error" role="alert">
-              <span>{sendError}</span>
-              <button disabled={isSending} onClick={send} type="button">重试</button>
-            </div>
-          )}
-          <div className="main-chat-compose-row">
-            <textarea
-              aria-label="输入消息"
-              disabled={isSending || historyState === 'loading'}
-              onChange={(event) => setInput(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' && !event.shiftKey) {
-                  event.preventDefault();
-                  send();
-                }
-              }}
-              placeholder="说点什么…"
-              rows="2"
-              value={input}
-            />
-            <button
-              disabled={!input.trim() || isSending || historyState === 'loading'}
-              type="submit"
-            >
-              {isSending ? '发送中' : '发送'}
-            </button>
-          </div>
-          <p>聊天保存在我们的家里，不保存在这台设备的浏览器存储中。</p>
-        </form>
-      </section>
-    </div>
+        <p>聊天保存在我们的家里，不保存在这台设备的浏览器存储中。</p>
+      </form>
+    </ChatShell>
   );
 }
