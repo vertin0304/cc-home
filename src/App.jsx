@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Bedroom from './Bedroom';
 import Chat from './Chat';
 import HomeMap from './HomeMap';
 import LivingRoom from './LivingRoom';
@@ -7,7 +8,7 @@ import LoginLayer from './components/auth/LoginLayer';
 import { createChatApi } from './lib/chatApi';
 import { supabase, supabaseConfigError } from './lib/supabaseClient';
 
-const routes = new Set(['/', '/map', '/home']);
+const routes = new Set(['/', '/map', '/home', '/bedroom']);
 
 function currentPath() {
   return routes.has(window.location.pathname) ? window.location.pathname : '/';
@@ -19,6 +20,16 @@ function App() {
   const [authReady, setAuthReady] = useState(() => !supabase);
   const [loginOpen, setLoginOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  const [chatOrigin, setChatOrigin] = useState('home');
+  const sceneScrollRef = useRef({ home: 0.47, bedroom: 0 });
+  const getHomeScrollRatio = useCallback(() => sceneScrollRef.current.home, []);
+  const getBedroomScrollRatio = useCallback(() => sceneScrollRef.current.bedroom, []);
+  const rememberHomeScroll = useCallback((ratio) => {
+    sceneScrollRef.current.home = ratio;
+  }, []);
+  const rememberBedroomScroll = useCallback((ratio) => {
+    sceneScrollRef.current.bedroom = ratio;
+  }, []);
 
   useEffect(() => {
     const onPopState = () => setPath(currentPath());
@@ -82,7 +93,8 @@ function App() {
     [signOut],
   );
 
-  const openChat = () => {
+  const openChat = (origin) => {
+    setChatOrigin(origin);
     if (!authReady || !session) {
       setLoginOpen(true);
       return;
@@ -124,8 +136,19 @@ function App() {
       )}
       {path === '/home' && (
         <LivingRoom
-          onOpenChat={openChat}
+          getInitialScrollRatio={getHomeScrollRatio}
+          onOpenBedroom={() => navigate('/bedroom')}
+          onOpenChat={() => openChat('home')}
           onReturn={() => navigate('/map')}
+          onScrollPositionChange={rememberHomeScroll}
+        />
+      )}
+      {path === '/bedroom' && (
+        <Bedroom
+          getInitialScrollRatio={getBedroomScrollRatio}
+          onOpenChat={() => openChat('bedroom')}
+          onReturn={() => navigate('/home')}
+          onScrollPositionChange={rememberBedroomScroll}
         />
       )}
 
@@ -142,6 +165,7 @@ function App() {
         onClose={() => setChatOpen(false)}
         onRequireLogin={requireLogin}
         onSignOut={signOut}
+        returnLabel={chatOrigin === 'bedroom' ? '返回卧室' : '返回客厅'}
         userId={session?.user?.id || null}
       />
     </>
