@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  formatDiagnosticDuration,
+  hasDiagnosticValue,
   normalizeChatDiagnostics,
   normalizeHistoryMessage,
 } from '../src/lib/chatDiagnostics.js';
@@ -50,4 +52,16 @@ test('无效诊断值归一化为 null，不把 null 与 0 混淆', () => {
   assert.equal(diagnostics.usage.inputTokens, 0);
   assert.equal(diagnostics.usage.outputTokens, null);
   assert.equal(diagnostics.usage.cachedTokens, null);
+});
+
+test('诊断展示只把 null 当作缺失并合理格式化长耗时', () => {
+  assert.equal(hasDiagnosticValue(null), false);
+  assert.equal(hasDiagnosticValue(undefined), false);
+  assert.equal(hasDiagnosticValue(0), true);
+  assert.equal(hasDiagnosticValue(false), true);
+  assert.equal(formatDiagnosticDuration(null, true), '未提供');
+  assert.equal(formatDiagnosticDuration(0, true), '0 ms');
+  assert.equal(formatDiagnosticDuration(1000, true), '1000 ms');
+  assert.equal(formatDiagnosticDuration(1842, true), '1.84 秒');
+  assert.equal(formatDiagnosticDuration(15320, true), '15.3 秒');
 });

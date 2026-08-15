@@ -220,7 +220,7 @@
 
 .main-chat-message {
   align-self: center;
-  width: min(100%, 860px);
+  width: min(100%, 1080px);
   min-width: 0;
 }
 
@@ -450,7 +450,7 @@
   display: grid;
   margin: 7px 0 0;
   padding: 0;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 5px 18px;
   list-style: none;
 }
@@ -477,7 +477,20 @@
   border-top: 1px solid rgba(235, 202, 154, 0.07);
 }
 
+.main-chat-diagnostics-note {
+  margin: 10px 0 0;
+  color: rgba(224, 204, 177, 0.5);
+  line-height: 1.55;
+}
+
+.main-chat-diagnostics-note.is-cache {
+  padding-top: 12px;
+  border-top: 1px solid rgba(235, 202, 154, 0.07);
+}
+
 .main-chat-composer {
+  align-self: center;
+  width: min(100%, 1080px);
   flex: 0 0 auto;
   padding-top: 15px;
   border-top: 1px solid rgba(239, 207, 160, 0.12);
@@ -767,6 +780,13 @@
   font-size: 12px;
 }
 
+@media (max-width: 960px) {
+  .main-chat-diagnostics-grid,
+  .main-chat-diagnostic-stages ul {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 700px) {
   .main-chat-layer {
     background: #40332d;
@@ -839,7 +859,7 @@
   }
 
   .main-chat-diagnostics-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .main-chat-diagnostic-stages ul {
