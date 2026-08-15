@@ -1,38 +1,14 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import ChatMessage from './components/chat/ChatMessage';
 import ChatShell from './components/chat/ChatShell';
-import { ChatAuthError } from './lib/chatApi';
+import { ChatAuthError, ChatRequestError } from './lib/chatApi';
+import { normalizeHistoryMessage } from './lib/chatDiagnostics';
+import {
+  appendPendingTurn,
+  failAssistantMessage,
+  settleAssistantMessage,
+} from './lib/chatMessages';
 import './Chat.css';
-
-const shanghaiTime = new Intl.DateTimeFormat('zh-CN', {
-  timeZone: 'Asia/Shanghai',
-  month: '2-digit',
-  day: '2-digit',
-  hour: '2-digit',
-  minute: '2-digit',
-  hour12: false,
-});
-
-function normalizeMessage(message, index) {
-  if (
-    !message
-    || !['user', 'assistant'].includes(message.role)
-    || typeof message.content !== 'string'
-  ) {
-    return null;
-  }
-  return {
-    id: `${message.createdAt || message.created_at || 'message'}-${index}`,
-    role: message.role === 'assistant' ? 'assistant' : 'user',
-    content: typeof message.content === 'string' ? message.content : '',
-    createdAt: message.createdAt || message.created_at || null,
-  };
-}
-
-function formatTime(value) {
-  if (!value) return '';
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? '' : shanghaiTime.format(date);
-}
 
 export default function Chat({
   api,
@@ -47,12 +23,14 @@ export default function Chat({
   const [input, setInput] = useState('');
   const [historyState, setHistoryState] = useState('idle');
   const [historyError, setHistoryError] = useState('');
-  const [sendError, setSendError] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeView, setActiveView] = useState('chat');
   const messageListRef = useRef(null);
   const scrollPositionRef = useRef(0);
+  const shouldStickToBottomRef = useRef(true);
+  const turnSequenceRef = useRef(0);
+  const sendInFlightRef = useRef(false);
 
   const resetShell = useCallback(() => {
     setIsSidebarOpen(false);
@@ -78,7 +56,7 @@ export default function Chat({
     setHistoryError('');
     try {
       const history = await api.getHistory();
-      setMessages(history.map(normalizeMessage).filter(Boolean));
+      setMessages(history.map(normalizeHistoryMessage).filter(Boolean));
       setHistoryState('ready');
     } catch (error) {
       if (error instanceof ChatAuthError) {
@@ -114,10 +92,12 @@ export default function Chat({
     return () => window.removeEventListener('keydown', closeOnEscape);
   }, [activeView, closeChat, isOpen, isSidebarOpen]);
 
-  useEffect(() => {
-    if (!messageListRef.current) return;
-    messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
-  }, [messages, isSending]);
+  useLayoutEffect(() => {
+    const messageList = messageListRef.current;
+    if (!messageList || !shouldStickToBottomRef.current) return;
+    messageList.scrollTop = messageList.scrollHeight;
+    scrollPositionRef.current = messageList.scrollTop;
+  }, [messages]);
 
   useLayoutEffect(() => {
     if (!isOpen || !messageListRef.current) return undefined;
@@ -132,36 +112,47 @@ export default function Chat({
   const send = async (event) => {
     event?.preventDefault();
     const text = input.trim();
-    if (!text || isSending || historyState === 'loading') return;
+    if (!text || sendInFlightRef.current || historyState === 'loading') return;
 
+    const createdAt = new Date().toISOString();
+    const turnId = `${Date.now()}-${turnSequenceRef.current += 1}`;
+    const userMessageId = `user-${turnId}`;
+    const assistantMessageId = `assistant-${turnId}`;
+
+    sendInFlightRef.current = true;
     setIsSending(true);
-    setSendError('');
+    setInput('');
+    shouldStickToBottomRef.current = true;
+    setMessages((current) => appendPendingTurn(current, {
+      assistantId: assistantMessageId,
+      createdAt,
+      text,
+      userId: userMessageId,
+    }));
+
     try {
-      const reply = await api.sendMessage(text);
-      const createdAt = new Date().toISOString();
-      setMessages((current) => [
-        ...current,
-        {
-          id: `user-${createdAt}`,
-          role: 'user',
-          content: text,
-          createdAt,
-        },
-        {
-          id: `assistant-${createdAt}`,
-          role: 'assistant',
-          content: reply,
-          createdAt,
-        },
-      ]);
-      setInput('');
+      const result = await api.sendMessage(text);
+      setMessages((current) => settleAssistantMessage(
+        current,
+        assistantMessageId,
+        result,
+        new Date().toISOString(),
+      ));
     } catch (error) {
+      const safeError = error instanceof ChatAuthError || error instanceof ChatRequestError
+        ? error
+        : new ChatRequestError();
+      setMessages((current) => failAssistantMessage(
+        current,
+        assistantMessageId,
+        safeError,
+        new Date().toISOString(),
+      ));
       if (error instanceof ChatAuthError) {
         requireLogin();
-        return;
       }
-      setSendError('这句话暂时没有送达，内容还留在输入框里。');
     } finally {
+      sendInFlightRef.current = false;
       setIsSending(false);
     }
   };
@@ -189,7 +180,11 @@ export default function Chat({
       <div
         className="main-chat-messages"
         onScroll={(event) => {
-          scrollPositionRef.current = event.currentTarget.scrollTop;
+          const messageList = event.currentTarget;
+          scrollPositionRef.current = messageList.scrollTop;
+          shouldStickToBottomRef.current = (
+            messageList.scrollHeight - messageList.scrollTop - messageList.clientHeight
+          ) < 72;
         }}
         ref={messageListRef}
       >
@@ -215,37 +210,15 @@ export default function Chat({
         )}
 
         {messages.map((message) => (
-          <article
-            className={`main-chat-message is-${message.role}`}
-            key={message.id}
-          >
-            <div>{message.content}</div>
-            {formatTime(message.createdAt) && (
-              <time dateTime={message.createdAt}>{formatTime(message.createdAt)}</time>
-            )}
-          </article>
+          <ChatMessage key={message.id} message={message} />
         ))}
-
-        {isSending && (
-          <div className="main-chat-sending" role="status">
-            <span />
-            <span />
-            <span />
-          </div>
-        )}
       </div>
 
       <form className="main-chat-composer" onSubmit={send}>
-        {sendError && (
-          <div className="main-chat-send-error" role="alert">
-            <span>{sendError}</span>
-            <button disabled={isSending} onClick={send} type="button">重试</button>
-          </div>
-        )}
         <div className="main-chat-compose-row">
           <textarea
             aria-label="输入消息"
-            disabled={isSending || historyState === 'loading'}
+            disabled={historyState === 'loading'}
             onChange={(event) => setInput(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === 'Enter' && !event.shiftKey) {
