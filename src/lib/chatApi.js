@@ -1,3 +1,9 @@
+import {
+  normalizeChatDiagnostics,
+  normalizeDiagnosticIdentifier,
+  normalizeRequestId,
+} from './chatDiagnostics.js';
+
 export class ChatAuthError extends Error {
   constructor() {
     super('登录状态已失效，请重新登录。');
@@ -6,9 +12,12 @@ export class ChatAuthError extends Error {
 }
 
 export class ChatRequestError extends Error {
-  constructor(message = '暂时没能送达，请稍后重试。') {
+  constructor(message = '暂时没能送达，请稍后重试。', details = {}) {
     super(message);
     this.name = 'ChatRequestError';
+    this.requestId = normalizeRequestId(details.requestId);
+    this.errorStage = normalizeDiagnosticIdentifier(details.errorStage);
+    this.errorCode = normalizeDiagnosticIdentifier(details.errorCode);
   }
 }
 
@@ -73,8 +82,15 @@ export function createChatApi({
       throw new ChatAuthError();
     }
 
-    if (!response.ok) throw new ChatRequestError();
-    return safeJson(response);
+    const data = await safeJson(response);
+    if (!response.ok) {
+      throw new ChatRequestError(undefined, {
+        requestId: data?.request_id,
+        errorStage: data?.error_stage,
+        errorCode: data?.error_code,
+      });
+    }
+    return data;
   }
 
   return {
@@ -92,7 +108,11 @@ export function createChatApi({
       if (typeof data?.reply !== 'string' || !data.reply.trim()) {
         throw new ChatRequestError();
       }
-      return data.reply;
+      return {
+        reply: data.reply,
+        requestId: normalizeRequestId(data.request_id),
+        diagnostics: normalizeChatDiagnostics(data.diagnostics),
+      };
     },
   };
 }

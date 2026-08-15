@@ -111,8 +111,7 @@
 }
 
 .main-chat-actions button,
-.main-chat-status button,
-.main-chat-send-error button {
+.main-chat-status button {
   min-height: 38px;
   padding: 0 14px;
   color: rgba(249, 235, 214, 0.72);
@@ -133,8 +132,7 @@
 .main-chat-menu:focus-visible,
 .main-chat-actions button:hover,
 .main-chat-actions button:focus-visible,
-.main-chat-status button:hover,
-.main-chat-send-error button:hover {
+.main-chat-status button:hover {
   color: #fff4df;
   background: rgba(215, 168, 99, 0.13);
   border-color: rgba(231, 190, 130, 0.34);
@@ -221,74 +219,262 @@
 }
 
 .main-chat-message {
-  width: fit-content;
-  max-width: min(75%, 720px);
+  align-self: center;
+  width: min(100%, 860px);
+  min-width: 0;
 }
 
-.main-chat-message > div {
+.main-chat-user-bubble {
+  width: fit-content;
+  max-width: 78%;
+  margin-left: auto;
   padding: 12px 15px;
+  color: #fff2de;
+  background: rgba(145, 91, 63, 0.58);
   border: 1px solid rgba(239, 211, 171, 0.1);
   border-radius: 17px;
+  border-bottom-right-radius: 5px;
   font-size: 14px;
   line-height: 1.7;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
 }
 
-.main-chat-message.is-assistant {
-  align-self: flex-start;
+.main-chat-assistant-body {
+  color: rgba(247, 233, 212, 0.9);
+  font-size: 14px;
+  line-height: 1.76;
+  overflow-wrap: anywhere;
 }
 
-.main-chat-message.is-assistant > div {
-  color: rgba(247, 233, 212, 0.88);
-  background: rgba(35, 35, 33, 0.34);
-  border-bottom-left-radius: 5px;
+.main-chat-assistant-body.is-error {
+  width: fit-content;
+  max-width: 78%;
+  padding: 11px 14px;
+  color: rgba(249, 199, 182, 0.9);
+  background: rgba(112, 58, 47, 0.2);
+  border: 1px solid rgba(231, 157, 132, 0.14);
+  border-radius: 13px;
 }
 
-.main-chat-message.is-user {
-  align-self: flex-end;
+.main-chat-assistant-body > :first-child {
+  margin-top: 0;
 }
 
-.main-chat-message.is-user > div {
-  color: #fff2de;
-  background: rgba(145, 91, 63, 0.58);
-  border-bottom-right-radius: 5px;
+.main-chat-assistant-body > :last-child {
+  margin-bottom: 0;
 }
 
-.main-chat-message time {
+.main-chat-assistant-body p {
+  margin: 0 0 0.85em;
+}
+
+.main-chat-assistant-body strong {
+  color: #fff0d7;
+  font-weight: 650;
+}
+
+.main-chat-assistant-body ul,
+.main-chat-assistant-body ol {
+  margin: 0.35em 0 0.9em;
+  padding-left: 1.45em;
+}
+
+.main-chat-assistant-body li + li {
+  margin-top: 0.28em;
+}
+
+.main-chat-assistant-body blockquote {
+  margin: 0.75em 0;
+  padding: 0.08em 0 0.08em 1em;
+  color: rgba(232, 214, 188, 0.68);
+  border-left: 2px solid rgba(220, 171, 103, 0.34);
+}
+
+.main-chat-assistant-body pre {
+  max-width: 100%;
+  margin: 0.9em 0;
+  padding: 14px 16px;
+  overflow-x: auto;
+  color: rgba(245, 232, 211, 0.9);
+  background: rgba(19, 21, 21, 0.58);
+  border: 1px solid rgba(235, 202, 154, 0.1);
+  border-radius: 12px;
+  scrollbar-color: rgba(211, 172, 117, 0.28) transparent;
+}
+
+.main-chat-assistant-body code {
+  padding: 0.12em 0.34em;
+  color: #f1d6ae;
+  background: rgba(20, 22, 22, 0.42);
+  border-radius: 5px;
+  font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+  font-size: 0.9em;
+}
+
+.main-chat-assistant-body pre code {
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  border-radius: 0;
+}
+
+.main-chat-message.is-user > time {
   display: block;
   margin-top: 5px;
   color: rgba(219, 201, 178, 0.38);
   font-size: 9px;
   letter-spacing: 0.05em;
-}
-
-.main-chat-message.is-user time {
   text-align: right;
 }
 
-.main-chat-sending {
+.main-chat-waiting {
   display: flex;
-  align-self: flex-start;
-  gap: 5px;
-  padding: 13px 15px;
-  background: rgba(35, 35, 33, 0.28);
-  border-radius: 15px;
+  align-items: center;
+  gap: 9px;
+  width: fit-content;
+  padding: 9px 0;
+  color: rgba(231, 210, 181, 0.54);
+  font-size: 11px;
+  letter-spacing: 0.06em;
 }
 
-.main-chat-sending span {
-  width: 5px;
-  height: 5px;
-  background: rgba(234, 201, 154, 0.55);
+.main-chat-waiting > span:first-child {
+  width: 15px;
+  height: 15px;
+  border: 1px solid rgba(235, 199, 145, 0.17);
+  border-top-color: rgba(238, 200, 142, 0.72);
   border-radius: 50%;
-  animation: chat-dot 1.1s ease-in-out infinite alternate;
+  animation: chat-spin 1s linear infinite;
 }
 
-.main-chat-sending span:nth-child(2) { animation-delay: 150ms; }
-.main-chat-sending span:nth-child(3) { animation-delay: 300ms; }
+.main-chat-message-meta {
+  margin-top: 7px;
+  color: rgba(219, 201, 178, 0.4);
+  font-size: 9px;
+}
 
-@keyframes chat-dot {
-  to { opacity: 0.28; transform: translateY(-3px); }
+.main-chat-message-summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px 11px;
+  letter-spacing: 0.035em;
+}
+
+.main-chat-message-summary span {
+  white-space: nowrap;
+}
+
+.main-chat-diagnostics {
+  margin-top: 5px;
+}
+
+.main-chat-diagnostics > summary {
+  width: fit-content;
+  padding: 2px 0;
+  color: rgba(226, 187, 131, 0.54);
+  cursor: pointer;
+  font-size: 9px;
+  list-style: none;
+  user-select: none;
+}
+
+.main-chat-diagnostics > summary::-webkit-details-marker {
+  display: none;
+}
+
+.main-chat-diagnostics > summary::after {
+  margin-left: 5px;
+  content: '⌄';
+}
+
+.main-chat-diagnostics[open] > summary::after {
+  content: '⌃';
+}
+
+.main-chat-diagnostics > summary:hover,
+.main-chat-diagnostics > summary:focus-visible {
+  color: rgba(244, 209, 158, 0.86);
+  outline: none;
+}
+
+.main-chat-diagnostics-panel {
+  margin-top: 8px;
+  padding: 13px 14px;
+  color: rgba(234, 217, 194, 0.62);
+  background: rgba(25, 26, 25, 0.3);
+  border: 1px solid rgba(235, 202, 154, 0.08);
+  border-radius: 12px;
+  font-size: 10px;
+}
+
+.main-chat-diagnostics-grid {
+  display: grid;
+  margin: 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px 16px;
+}
+
+.main-chat-diagnostics-grid > div {
+  min-width: 0;
+}
+
+.main-chat-diagnostics-grid dt {
+  margin-bottom: 3px;
+  color: rgba(214, 189, 154, 0.42);
+}
+
+.main-chat-diagnostics-grid dd {
+  margin: 0;
+  color: rgba(245, 229, 207, 0.72);
+  overflow-wrap: anywhere;
+}
+
+.main-chat-diagnostics-grid dd.is-request-id {
+  font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+  font-size: 9px;
+}
+
+.main-chat-diagnostic-stages {
+  margin: 14px 0;
+  padding-top: 12px;
+  border-top: 1px solid rgba(235, 202, 154, 0.07);
+}
+
+.main-chat-diagnostic-stages > span {
+  color: rgba(214, 189, 154, 0.42);
+}
+
+.main-chat-diagnostic-stages ul {
+  display: grid;
+  margin: 7px 0 0;
+  padding: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px 18px;
+  list-style: none;
+}
+
+.main-chat-diagnostic-stages li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px;
+}
+
+.main-chat-diagnostic-stages strong {
+  color: rgba(241, 223, 199, 0.67);
+  font-weight: 500;
+}
+
+.main-chat-diagnostic-stages small {
+  min-width: 62px;
+  color: rgba(216, 195, 167, 0.4);
+  text-align: right;
+}
+
+.main-chat-diagnostics-grid.is-usage-detail {
+  padding-top: 12px;
+  border-top: 1px solid rgba(235, 202, 154, 0.07);
 }
 
 .main-chat-composer {
@@ -345,16 +531,6 @@
   font-size: 9px;
   letter-spacing: 0.04em;
   text-align: center;
-}
-
-.main-chat-send-error {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 10px;
-  color: rgba(244, 189, 173, 0.88);
-  font-size: 11px;
 }
 
 .main-chat-sidebar {
@@ -648,11 +824,30 @@
   }
 
   .main-chat-message {
-    max-width: 86%;
+    width: 100%;
+    max-width: 100%;
   }
 
-  .main-chat-message > div {
+  .main-chat-user-bubble,
+  .main-chat-assistant-body {
     font-size: 13px;
+  }
+
+  .main-chat-user-bubble,
+  .main-chat-assistant-body.is-error {
+    max-width: 88%;
+  }
+
+  .main-chat-diagnostics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .main-chat-diagnostic-stages ul {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .main-chat-diagnostics-panel {
+    padding: 12px;
   }
 
   .main-chat-composer {
@@ -761,7 +956,7 @@
   }
 
   .main-chat-loading span,
-  .main-chat-sending span {
+  .main-chat-waiting > span:first-child {
     animation: none;
   }
 }

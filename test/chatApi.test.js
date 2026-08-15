@@ -58,10 +58,57 @@ test('sendMessage 只发送 message 字段', async () => {
   const harness = createHarness({
     responses: [jsonResponse(200, { reply: 'reply' })],
   });
-  const reply = await harness.api.sendMessage('hello');
+  const result = await harness.api.sendMessage('hello');
 
-  assert.equal(reply, 'reply');
+  assert.deepEqual(result, {
+    reply: 'reply',
+    requestId: null,
+    diagnostics: null,
+  });
   assert.deepEqual(JSON.parse(harness.requests[0].options.body), { message: 'hello' });
+});
+
+test('sendMessage 只保留白名单诊断并保留 0', async () => {
+  const requestId = '22222222-2222-4222-8222-222222222222';
+  const harness = createHarness({
+    responses: [jsonResponse(200, {
+      reply: '**reply**',
+      request_id: requestId,
+      diagnostics: {
+        schema_version: 1,
+        status: 'success',
+        total_duration_ms: 0,
+        stages: {
+          gateway: { status: 'success', duration_ms: 0, prompt: 'hidden' },
+        },
+        gateway: {
+          round: 0,
+          recent_context_injected: false,
+          recalled_count: 0,
+          diffused_count: 0,
+          injected_count: 0,
+        },
+        usage: {
+          input_tokens: 0,
+          cached_tokens: 0,
+          output_tokens: 0,
+          provider_detail: 'hidden',
+        },
+        prompt: 'hidden',
+      },
+    })],
+  });
+
+  const result = await harness.api.sendMessage('hello');
+  assert.equal(result.requestId, requestId);
+  assert.equal(result.diagnostics.totalDurationMs, 0);
+  assert.equal(result.diagnostics.stages.gateway.durationMs, 0);
+  assert.equal(result.diagnostics.gateway.round, 0);
+  assert.equal(result.diagnostics.gateway.recentContextInjected, false);
+  assert.equal(result.diagnostics.usage.inputTokens, 0);
+  assert.equal(result.diagnostics.usage.cachedTokens, 0);
+  assert.equal(result.diagnostics.usage.outputTokens, 0);
+  assert.equal(JSON.stringify(result).includes('hidden'), false);
 });
 
 test('401 只刷新并重试一次', async () => {
@@ -107,5 +154,28 @@ test('网络和服务端错误只返回安全的前端错误', async () => {
   await assert.rejects(
     () => harness.api.sendMessage('private text'),
     (error) => error instanceof ChatRequestError && !error.message.includes('hidden'),
+  );
+});
+
+test('错误响应只暴露安全 request_id、阶段和代码', async () => {
+  const requestId = '33333333-3333-4333-8333-333333333333';
+  const harness = createHarness({
+    responses: [jsonResponse(502, {
+      request_id: requestId,
+      error_stage: 'gateway',
+      error_code: 'upstream_timeout',
+      detail: 'private upstream detail',
+    })],
+  });
+
+  await assert.rejects(
+    () => harness.api.sendMessage('private text'),
+    (error) => (
+      error instanceof ChatRequestError
+      && error.requestId === requestId
+      && error.errorStage === 'gateway'
+      && error.errorCode === 'upstream_timeout'
+      && !error.message.includes('private upstream detail')
+    ),
   );
 });
