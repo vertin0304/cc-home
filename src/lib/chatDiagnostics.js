@@ -28,6 +28,20 @@ function nonNegativeNumber(value) {
     : null;
 }
 
+export function hasDiagnosticValue(value) {
+  return value !== null && value !== undefined;
+}
+
+export function formatDiagnosticDuration(value, preferSeconds = false) {
+  if (!hasDiagnosticValue(value)) return '未提供';
+  if (preferSeconds && value > 1000) {
+    const seconds = value / 1000;
+    const precision = seconds >= 10 ? 1 : 2;
+    return `${Number(seconds.toFixed(precision))} 秒`;
+  }
+  return `${value} ms`;
+}
+
 export function normalizeRequestId(value) {
   return typeof value === 'string'
     && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
