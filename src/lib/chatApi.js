@@ -3,6 +3,10 @@ import {
   normalizeDiagnosticIdentifier,
   normalizeRequestId,
 } from './chatDiagnostics.js';
+import {
+  isKnownModelAlias,
+  normalizeModelPreferences,
+} from './modelPreferences.js';
 
 export class ChatAuthError extends Error {
   constructor() {
@@ -94,6 +98,28 @@ export function createChatApi({
   }
 
   return {
+    async getModelPreferences() {
+      const data = await authorizedRequest('/chat/models', { method: 'GET' });
+      const preferences = normalizeModelPreferences(data);
+      if (!preferences) throw new ChatRequestError('模型设置暂时不可用。');
+      return preferences;
+    },
+
+    async setModelPreference(model) {
+      if (!isKnownModelAlias(model)) {
+        throw new ChatRequestError('这个模型选项暂时不可用。');
+      }
+      const data = await authorizedRequest('/chat/preferences/model', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model }),
+      });
+      if (data?.selected_model !== model) {
+        throw new ChatRequestError('模型设置暂时不可用。');
+      }
+      return model;
+    },
+
     async getHistory() {
       const data = await authorizedRequest('/chat/history', { method: 'GET' });
       return Array.isArray(data?.messages) ? data.messages : [];

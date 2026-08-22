@@ -68,6 +68,83 @@ test('sendMessage 只发送 message 字段', async () => {
   assert.deepEqual(JSON.parse(harness.requests[0].options.body), { message: 'hello' });
 });
 
+test('模型设置接口只使用账号 JWT 和安全公开别名', async () => {
+  const harness = createHarness({
+    responses: [
+      jsonResponse(200, {
+        models: [
+          { id: 'cc-home-default', label: '服务端标签' },
+          { id: 'cc-home-claude-sonnet', provider_url: 'hidden' },
+        ],
+        selected_model: 'cc-home-default',
+        default_model: 'cc-home-default',
+      }),
+      jsonResponse(200, { selected_model: 'cc-home-claude-sonnet' }),
+    ],
+  });
+
+  const preferences = await harness.api.getModelPreferences();
+  assert.deepEqual(preferences, {
+    models: [
+      {
+        id: 'cc-home-default',
+        label: '默认模型',
+        description: '沿用现在熟悉的聊天方式。',
+      },
+      {
+        id: 'cc-home-claude-sonnet',
+        label: 'Claude Sonnet',
+        description: '轻快均衡，适合日常聊天。',
+      },
+    ],
+    defaultModel: 'cc-home-default',
+    selectedModel: 'cc-home-default',
+  });
+  assert.equal(harness.requests[0].url, 'https://api.example.invalid/chat/models');
+  assert.equal(harness.requests[0].options.method, 'GET');
+  assert.equal(harness.requests[0].options.headers.Authorization, 'Bearer browser-user-token');
+
+  await harness.api.setModelPreference('cc-home-claude-sonnet');
+  assert.equal(harness.requests[1].url, 'https://api.example.invalid/chat/preferences/model');
+  assert.equal(harness.requests[1].options.method, 'PUT');
+  assert.deepEqual(JSON.parse(harness.requests[1].options.body), {
+    model: 'cc-home-claude-sonnet',
+  });
+});
+
+test('模型设置拒绝未知别名且不发送请求', async () => {
+  const harness = createHarness();
+
+  await assert.rejects(
+    () => harness.api.setModelPreference('anthropic/real-model'),
+    ChatRequestError,
+  );
+  assert.equal(harness.requests.length, 0);
+});
+
+test('模型列表过滤服务端额外字段、未知别名和重复项', async () => {
+  const harness = createHarness({
+    responses: [jsonResponse(200, {
+      models: [
+        { id: 'cc-home-default', base_url: 'hidden' },
+        { id: 'cc-home-default' },
+        { id: 'provider-secret-model', api_key: 'hidden' },
+        { id: 'cc-home-claude-opus', upstream_model: 'hidden' },
+      ],
+      selected_model: 'provider-secret-model',
+      default_model: 'cc-home-default',
+    })],
+  });
+
+  const preferences = await harness.api.getModelPreferences();
+  assert.deepEqual(preferences.models.map((model) => model.id), [
+    'cc-home-default',
+    'cc-home-claude-opus',
+  ]);
+  assert.equal(preferences.selectedModel, 'cc-home-default');
+  assert.doesNotMatch(JSON.stringify(preferences), /hidden|provider-secret-model|base_url|api_key/);
+});
+
 test('sendMessage 只保留白名单诊断并保留 0', async () => {
   const requestId = '22222222-2222-4222-8222-222222222222';
   const harness = createHarness({
