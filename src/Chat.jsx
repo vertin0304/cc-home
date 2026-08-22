@@ -161,6 +161,7 @@ export default function Chat({
 
   return (
     <ChatShell
+      api={api}
       isSettingsOpen={activeView === 'settings'}
       isSidebarOpen={isSidebarOpen}
       onClose={closeChat}
@@ -169,6 +170,7 @@ export default function Chat({
         setActiveView('settings');
         setIsSidebarOpen(false);
       }}
+      onRequireLogin={requireLogin}
       onSelectMainChat={() => {
         setActiveView('chat');
         setIsSidebarOpen(false);
@@ -176,6 +178,7 @@ export default function Chat({
       onSignOut={onSignOut}
       onToggleSidebar={() => setIsSidebarOpen((current) => !current)}
       returnLabel={returnLabel}
+      userId={userId}
     >
       <div
         className="main-chat-messages"

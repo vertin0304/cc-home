@@ -2,16 +2,19 @@ import ChatSettings from './ChatSettings';
 import ChatSidebar from './ChatSidebar';
 
 export default function ChatShell({
+  api,
   children,
   isSettingsOpen,
   isSidebarOpen,
   onClose,
   onCloseSidebar,
   onOpenSettings,
+  onRequireLogin,
   onSelectMainChat,
   onSignOut,
   onToggleSidebar,
   returnLabel,
+  userId,
 }) {
   return (
     <div className="main-chat-layer" role="presentation">
@@ -80,7 +83,13 @@ export default function ChatShell({
             >
               {children}
             </div>
-            <ChatSettings isOpen={isSettingsOpen} onBack={onSelectMainChat} />
+            <ChatSettings
+              api={api}
+              isOpen={isSettingsOpen}
+              onBack={onSelectMainChat}
+              onRequireLogin={onRequireLogin}
+              userId={userId}
+            />
           </div>
         </div>
       </section>
